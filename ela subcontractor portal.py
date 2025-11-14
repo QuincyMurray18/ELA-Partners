@@ -6,12 +6,11 @@ from datetime import datetime, date
 from zoneinfo import ZoneInfo
 
 CSV_PATH = "ela_subcontractor_signups.csv"
-LOGO_PATH = "ela_logo.png"  # save your logo with this name next to this file
+LOGO_PATH = "ela_logo.png"
 CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 
 def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
-    """Append one record to the CSV file, creating it if needed."""
     new_row = pd.DataFrame([record])
 
     if os.path.exists(path):
@@ -27,9 +26,8 @@ def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
 
 
 def build_time_options_12h() -> list[str]:
-    """Return 12-hour time labels (every 30 minutes) from 7:00 AM to 7:30 PM."""
     labels = []
-    for hour in range(7, 20):  # 7 to 19
+    for hour in range(7, 20):
         for minute in (0, 30):
             dt = datetime(2000, 1, 1, hour, minute)
             labels.append(dt.strftime("%I:%M %p"))
@@ -37,7 +35,6 @@ def build_time_options_12h() -> list[str]:
 
 
 def show_public_form():
-    """Public facing subcontractor sign up form."""
     if os.path.exists(LOGO_PATH):
         st.image(LOGO_PATH, width=200)
 
@@ -134,9 +131,12 @@ or by email at elamgmtllc@gmail.com.
         preferred_date = col_date.date_input("Preferred date for a conference call")
 
         time_options = build_time_options_12h()
-        # Default to 9:00 AM if present
         default_time_label = "09:00 AM"
-        default_index = time_options.index(default_time_label) if default_time_label in time_options else 0
+        default_index = (
+            time_options.index(default_time_label)
+            if default_time_label in time_options
+            else 0
+        )
         preferred_time_label = col_time.selectbox(
             "Preferred time (Central, 12-hour)",
             time_options,
@@ -163,7 +163,6 @@ or by email at elamgmtllc@gmail.com.
             )
             return
 
-        # Build timestamps
         now_utc = datetime.utcnow()
         now_central = datetime.now(tz=CENTRAL_TZ)
 
@@ -230,12 +229,44 @@ or by email at elamgmtllc@gmail.com.
 
 
 def show_admin_area():
-    """Hidden internal area for ELA to see and download signups."""
     st.markdown("### ELA internal view")
 
     if os.path.exists(CSV_PATH):
         df = pd.read_csv(CSV_PATH)
+
         st.dataframe(df)
+
+        if not df.empty:
+            st.markdown("Select entries to delete from the stored list.")
+            row_indices = list(range(len(df)))
+
+            def _fmt(i: int) -> str:
+                try:
+                    name = str(df.loc[i, "business_name"])
+                except Exception:
+                    name = "Unknown"
+                try:
+                    email = str(df.loc[i, "email"])
+                except Exception:
+                    email = ""
+                label = f"{i}  {name}"
+                if email:
+                    label += f"  ({email})"
+                return label
+
+            to_delete = st.multiselect(
+                "Rows to delete",
+                row_indices,
+                format_func=_fmt,
+            )
+
+            if st.button("Delete selected entries"):
+                if to_delete:
+                    df_new = df.drop(index=to_delete).reset_index(drop=True)
+                    df_new.to_csv(CSV_PATH, index=False)
+                    st.success("Selected entries deleted.")
+                    st.experimental_rerun()
+
         csv_bytes = df.to_csv(index=False).encode("utf-8")
         st.download_button(
             "Download all signups as CSV",
@@ -255,8 +286,6 @@ def main():
 
     show_public_form()
 
-    # Admin view toggle via query parameter
-    # Open the app as: ?ela_admin=1 to see internal data.
     params = st.experimental_get_query_params()
     is_admin = params.get("ela_admin", ["0"])[0] == "1"
 
