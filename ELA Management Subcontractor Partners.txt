@@ -1,0 +1,23 @@
+# ELA Management Subcontractor Partner Portal
+
+This is a simple Streamlit app that lets subcontractor partners submit their company information to ELA Management LLC. Each submission is stored in an Excel file that only ELA can see on the backend.
+
+## Features
+
+* Friendly landing text explaining how ELA helps small businesses get more federal work
+* Simple form for subcontractors to enter:
+  * Company and contact details
+  * NAICS codes and certifications
+  * Services, coverage area, and past performance
+  * Insurance and bonding
+  * Preferred date and time for a conference call
+* Logo display at the top using `ela_logo.png`
+* Automatic export of all submissions to an Excel file `ela_subcontractor_signups.xlsx`
+
+## Requirements
+
+* Python 3.9 or newer
+* The following Python packages
+
+```bash
+pip install streamlit pandas openpyxl
