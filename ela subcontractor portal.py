@@ -2,10 +2,12 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime
+from datetime import datetime, date, time
+from zoneinfo import ZoneInfo
 
 CSV_PATH = "ela_subcontractor_signups.csv"
 LOGO_PATH = "ela_logo.png"  # save your logo with this name next to this file
+CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 
 def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
@@ -140,8 +142,28 @@ or by email at elamgmtllc@gmail.com.
             )
             return
 
+        # Build timestamps
+        now_utc = datetime.utcnow()
+        now_central = datetime.now(tz=CENTRAL_TZ)
+
+        # Combine preferred date and time and format in Central 12-hour clock
+        if isinstance(preferred_date, date) and isinstance(preferred_time, time):
+            call_dt = datetime.combine(preferred_date, preferred_time)
+            # Treat as Central local time for display
+            call_dt_central = call_dt.replace(tzinfo=CENTRAL_TZ)
+            preferred_call_datetime_central = call_dt_central.strftime(
+                "%m/%d/%Y %I:%M %p Central"
+            )
+            preferred_call_time_central = call_dt_central.strftime("%I:%M %p")
+        else:
+            preferred_call_datetime_central = ""
+            preferred_call_time_central = ""
+
         record = {
-            "timestamp_utc": datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S"),
+            "timestamp_utc": now_utc.strftime("%Y/%m/%d %H:%M:%S"),
+            "timestamp_central": now_central.strftime(
+                "%Y/%m/%d %I:%M:%S %p Central"
+            ),
             "contact_name": contact_name,
             "business_name": business_name,
             "dba": dba,
@@ -163,8 +185,9 @@ or by email at elamgmtllc@gmail.com.
             "general_liability_limit": gl_limit,
             "bonding_capacity": bonding_capacity,
             "workers_comp": workers_comp,
-            "preferred_call_date": preferred_date.isoformat(),
-            "preferred_call_time": preferred_time.strftime("%H:%M"),
+            "preferred_call_date": preferred_date.strftime("%m/%d/%Y"),
+            "preferred_call_time_central": preferred_call_time_central,
+            "preferred_call_datetime_central": preferred_call_datetime_central,
             "notes": notes,
         }
 
