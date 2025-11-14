@@ -27,6 +27,7 @@ def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
 
 def build_time_options_12h() -> list[str]:
     labels: list[str] = []
+    # 7:00 AM to 7:30 PM in 30-minute increments
     for hour in range(7, 20):
         for minute in (0, 30):
             dt = datetime(2000, 1, 1, hour, minute)
@@ -39,19 +40,40 @@ def show_public_form():
         st.image(LOGO_PATH, width=200)
 
     st.title("ELA Management LLC")
-    st.subheader("Subcontractor Partner Interest Form")
+    st.subheader("Join Our Subcontractor Partner Network")
 
     st.write(
         """
-ELA Management LLC helps small businesses secure steady federal work as trusted partners.
+ELA Management LLC helps small businesses win and perform steady federal contracts as trusted partners.
 
-Are you looking for more consistent projects
-Is your company tired of waiting for work to come in
-Would you like access to contract opportunities that can last one to five years
+If you are:
 
-Complete the quick form below to be considered for our subcontractor network.
-We will reach out to schedule a conference call at 832 273 0498
-or by email at elamgmtllc@gmail.com.
+• Tired of waiting for work to walk through the door  
+• Looking for more predictable revenue and cash flow  
+• Interested in multi-year opportunities, not just one-off jobs  
+• Ready to focus on performance while a prime handles the paperwork  
+
+then this form is for you.
+
+By joining our subcontractor partner network, your company can:
+
+• Be considered for upcoming federal and commercial projects across multiple NAICS codes  
+• Get access to one- to five-year contract opportunities when they are released  
+• Reduce the time you spend chasing leads and cold opportunities  
+• Build a repeat relationship with a prime that understands small-business needs  
+
+**What to do now**
+
+Complete the short form below with your company details, core services, and coverage area.  
+Submitting your information now means your company can be reviewed and included in our pipeline for active and upcoming bids, not months from now.
+
+After you submit:
+
+• We review your information and capabilities  
+• We may contact you to schedule a brief conference call to confirm fit and discuss next steps  
+• When opportunities match your services and location, you can be contacted quickly for quotes, teaming, or task orders  
+
+For questions, you can reach us at **832 273 0498** or **elamgmtllc@gmail.com**.
         """
     )
 
@@ -115,15 +137,15 @@ or by email at elamgmtllc@gmail.com.
 
         st.markdown("### Past performance")
 
-        gov_contracts = st.text_area("Government contracts (if any)")
-        commercial_projects = st.text_area("Commercial projects")
-        references = st.text_area("References")
+        gov_contracts = st.text_area("Relevant government contracts (if any)")
+        commercial_projects = st.text_area("Relevant commercial projects")
+        references = st.text_area("References (names, agencies, or companies)")
 
         st.markdown("### Insurance and bonding")
 
         gl_limit = st.text_input("General liability coverage limit (dollar amount)")
         bonding_capacity = st.text_input("Bonding capacity (dollar amount)")
-        workers_comp = st.radio("Workers compensation in place", ["Yes", "No"])
+        workers_comp = st.radio("Workers’ compensation in place", ["Yes", "No"])
 
         st.markdown("### Call preference and notes")
 
@@ -145,7 +167,7 @@ or by email at elamgmtllc@gmail.com.
 
         notes = st.text_area("Notes or comments")
 
-        submitted = st.form_submit_button("Submit partner interest")
+        submitted = st.form_submit_button("Submit partner information")
 
     if submitted:
         required_missing: list[str] = []
@@ -218,7 +240,7 @@ or by email at elamgmtllc@gmail.com.
             append_to_csv(record)
             st.success(
                 "Thank you for submitting your information. "
-                "ELA Management will review your details and contact you soon."
+                "ELA Management will review your details and contact you about potential opportunities."
             )
         except Exception as exc:
             st.error(
