@@ -26,7 +26,7 @@ def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
 
 
 def build_time_options_12h() -> list[str]:
-    labels = []
+    labels: list[str] = []
     for hour in range(7, 20):
         for minute in (0, 30):
             dt = datetime(2000, 1, 1, hour, minute)
@@ -148,7 +148,7 @@ or by email at elamgmtllc@gmail.com.
         submitted = st.form_submit_button("Submit partner interest")
 
     if submitted:
-        required_missing = []
+        required_missing: list[str] = []
         if not business_name:
             required_missing.append("Legal business name")
         if not phone:
@@ -231,51 +231,52 @@ or by email at elamgmtllc@gmail.com.
 def show_admin_area():
     st.markdown("### ELA internal view")
 
-    if os.path.exists(CSV_PATH):
-        df = pd.read_csv(CSV_PATH)
-
-        st.dataframe(df)
-
-        if not df.empty:
-            st.markdown("Select entries to delete from the stored list.")
-            row_indices = list(range(len(df)))
-
-            def _fmt(i: int) -> str:
-                try:
-                    name = str(df.loc[i, "business_name"])
-                except Exception:
-                    name = "Unknown"
-                try:
-                    email = str(df.loc[i, "email"])
-                except Exception:
-                    email = ""
-                label = f"{i}  {name}"
-                if email:
-                    label += f"  ({email})"
-                return label
-
-            to_delete = st.multiselect(
-                "Rows to delete",
-                row_indices,
-                format_func=_fmt,
-            )
-
-            if st.button("Delete selected entries"):
-                if to_delete:
-                    df_new = df.drop(index=to_delete).reset_index(drop=True)
-                    df_new.to_csv(CSV_PATH, index=False)
-                    st.success("Selected entries deleted.")
-                    st.experimental_rerun()
-
-        csv_bytes = df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "Download all signups as CSV",
-            data=csv_bytes,
-            file_name="ela_subcontractor_signups.csv",
-            mime="text/csv",
-        )
-    else:
+    if not os.path.exists(CSV_PATH):
         st.info("No submissions have been recorded yet.")
+        return
+
+    df = pd.read_csv(CSV_PATH)
+
+    if not df.empty:
+        st.markdown("Select entries to delete from the stored list.")
+        row_indices = list(range(len(df)))
+
+        def _fmt(i: int) -> str:
+            try:
+                name = str(df.loc[i, "business_name"])
+            except Exception:
+                name = "Unknown"
+            try:
+                email = str(df.loc[i, "email"])
+            except Exception:
+                email = ""
+            label = f"{i}  {name}"
+            if email:
+                label += f"  ({email})"
+            return label
+
+        to_delete = st.multiselect(
+            "Rows to delete",
+            row_indices,
+            format_func=_fmt,
+        )
+
+        delete_clicked = st.button("Delete selected entries")
+
+        if delete_clicked and to_delete:
+            df = df.drop(index=to_delete).reset_index(drop=True)
+            df.to_csv(CSV_PATH, index=False)
+            st.success("Selected entries deleted.")
+
+    st.dataframe(df)
+
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download all signups as CSV",
+        data=csv_bytes,
+        file_name="ela_subcontractor_signups.csv",
+        mime="text/csv",
+    )
 
 
 def main():
