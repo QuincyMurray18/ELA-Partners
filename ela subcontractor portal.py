@@ -4,24 +4,24 @@ import pandas as pd
 import os
 from datetime import datetime
 
-EXCEL_PATH = "ela_subcontractor_signups.xlsx"
+CSV_PATH = "ela_subcontractor_signups.csv"
 LOGO_PATH = "ela_logo.png"  # save your logo with this name next to this file
 
 
-def append_to_excel(record: dict, path: str = EXCEL_PATH) -> None:
-    """Append one record to the Excel file, creating it if needed."""
+def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
+    """Append one record to the CSV file, creating it if needed."""
     new_row = pd.DataFrame([record])
 
     if os.path.exists(path):
         try:
-            existing = pd.read_excel(path)
+            existing = pd.read_csv(path)
             combined = pd.concat([existing, new_row], ignore_index=True)
         except Exception:
             combined = new_row
     else:
         combined = new_row
 
-    combined.to_excel(path, index=False)
+    combined.to_csv(path, index=False)
 
 
 def main():
@@ -173,7 +173,7 @@ or by email at elamgmtllc@gmail.com.
         }
 
         try:
-            append_to_excel(record)
+            append_to_csv(record)
             st.success(
                 "Thank you for submitting your information. "
                 "ELA Management will review your details and contact you soon."
