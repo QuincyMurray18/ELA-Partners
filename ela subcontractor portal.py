@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime, date, time
+from datetime import datetime, date
 from zoneinfo import ZoneInfo
 
 CSV_PATH = "ela_subcontractor_signups.csv"
@@ -24,6 +24,16 @@ def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
         combined = new_row
 
     combined.to_csv(path, index=False)
+
+
+def build_time_options_12h() -> list[str]:
+    """Return 12-hour time labels (every 30 minutes) from 7:00 AM to 7:30 PM."""
+    labels = []
+    for hour in range(7, 20):  # 7 to 19
+        for minute in (0, 30):
+            dt = datetime(2000, 1, 1, hour, minute)
+            labels.append(dt.strftime("%I:%M %p"))
+    return labels
 
 
 def show_public_form():
@@ -120,21 +130,18 @@ or by email at elamgmtllc@gmail.com.
 
         st.markdown("### Call preference and notes")
 
-        col_date, col_time_hour, col_time_min, col_ampm = st.columns([1, 1, 1, 1])
+        col_date, col_time = st.columns(2)
         preferred_date = col_date.date_input("Preferred date for a conference call")
-        hour_options = list(range(1, 13))
-        preferred_hour_12 = col_time_hour.selectbox(
-            "Hour (Central)",
-            hour_options,
-            index=8,  # default 9 AM
+
+        time_options = build_time_options_12h()
+        # Default to 9:00 AM if present
+        default_time_label = "09:00 AM"
+        default_index = time_options.index(default_time_label) if default_time_label in time_options else 0
+        preferred_time_label = col_time.selectbox(
+            "Preferred time (Central, 12-hour)",
+            time_options,
+            index=default_index,
         )
-        minute_options = [0, 15, 30, 45]
-        preferred_minute = col_time_min.selectbox(
-            "Minutes",
-            minute_options,
-            index=0,
-        )
-        ampm = col_ampm.radio("AM or PM", ["AM", "PM"], horizontal=True)
 
         notes = st.text_area("Notes or comments")
 
@@ -160,24 +167,21 @@ or by email at elamgmtllc@gmail.com.
         now_utc = datetime.utcnow()
         now_central = datetime.now(tz=CENTRAL_TZ)
 
-        # Convert preferred time to 24 hour for storage and then format back to 12 hour Central
-        hour_24 = preferred_hour_12 % 12
-        if ampm == "PM":
-            hour_24 += 12
-        preferred_time_obj = time(hour_24, preferred_minute)
+        if isinstance(preferred_date, date) and preferred_time_label:
+            preferred_call_date_str = preferred_date.strftime("%m/%d/%Y")
+            call_dt_central = datetime.strptime(
+                f"{preferred_call_date_str} {preferred_time_label}",
+                "%m/%d/%Y %I:%M %p",
+            ).replace(tzinfo=CENTRAL_TZ)
 
-        if isinstance(preferred_date, date):
-            call_dt = datetime.combine(preferred_date, preferred_time_obj)
-            call_dt_central = call_dt.replace(tzinfo=CENTRAL_TZ)
             preferred_call_datetime_central = call_dt_central.strftime(
                 "%m/%d/%Y %I:%M %p Central"
             )
             preferred_call_time_central = call_dt_central.strftime("%I:%M %p")
-            preferred_call_date_str = preferred_date.strftime("%m/%d/%Y")
         else:
+            preferred_call_date_str = ""
             preferred_call_datetime_central = ""
             preferred_call_time_central = ""
-            preferred_call_date_str = ""
 
         record = {
             "timestamp_utc": now_utc.strftime("%Y/%m/%d %H:%M:%S"),
