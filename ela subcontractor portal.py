@@ -185,6 +185,23 @@ or by email at elamgmtllc@gmail.com.
             )
             st.text(f"Technical details: {exc}")
 
+    st.markdown("---")
+    st.markdown("#### ELA internal area")
+
+    with st.expander("View and download subcontractor signups (ELA only)"):
+        if os.path.exists(CSV_PATH):
+            df = pd.read_csv(CSV_PATH)
+            st.dataframe(df)
+            csv_bytes = df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "Download all signups as CSV",
+                data=csv_bytes,
+                file_name="ela_subcontractor_signups.csv",
+                mime="text/csv",
+            )
+        else:
+            st.info("No submissions have been recorded yet.")
+
 
 if __name__ == "__main__":
     main()
