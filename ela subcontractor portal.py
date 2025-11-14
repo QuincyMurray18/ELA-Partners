@@ -120,8 +120,22 @@ or by email at elamgmtllc@gmail.com.
 
         st.markdown("### Call preference and notes")
 
-        preferred_date = st.date_input("Preferred date for a conference call")
-        preferred_time = st.time_input("Preferred time for a call")
+        col_date, col_time_hour, col_time_min, col_ampm = st.columns([1, 1, 1, 1])
+        preferred_date = col_date.date_input("Preferred date for a conference call")
+        hour_options = list(range(1, 13))
+        preferred_hour_12 = col_time_hour.selectbox(
+            "Hour (Central)",
+            hour_options,
+            index=8,  # default 9 AM
+        )
+        minute_options = [0, 15, 30, 45]
+        preferred_minute = col_time_min.selectbox(
+            "Minutes",
+            minute_options,
+            index=0,
+        )
+        ampm = col_ampm.radio("AM or PM", ["AM", "PM"], horizontal=True)
+
         notes = st.text_area("Notes or comments")
 
         submitted = st.form_submit_button("Submit partner interest")
@@ -146,18 +160,24 @@ or by email at elamgmtllc@gmail.com.
         now_utc = datetime.utcnow()
         now_central = datetime.now(tz=CENTRAL_TZ)
 
-        # Combine preferred date and time and format in Central 12-hour clock
-        if isinstance(preferred_date, date) and isinstance(preferred_time, time):
-            call_dt = datetime.combine(preferred_date, preferred_time)
-            # Treat as Central local time for display
+        # Convert preferred time to 24 hour for storage and then format back to 12 hour Central
+        hour_24 = preferred_hour_12 % 12
+        if ampm == "PM":
+            hour_24 += 12
+        preferred_time_obj = time(hour_24, preferred_minute)
+
+        if isinstance(preferred_date, date):
+            call_dt = datetime.combine(preferred_date, preferred_time_obj)
             call_dt_central = call_dt.replace(tzinfo=CENTRAL_TZ)
             preferred_call_datetime_central = call_dt_central.strftime(
                 "%m/%d/%Y %I:%M %p Central"
             )
             preferred_call_time_central = call_dt_central.strftime("%I:%M %p")
+            preferred_call_date_str = preferred_date.strftime("%m/%d/%Y")
         else:
             preferred_call_datetime_central = ""
             preferred_call_time_central = ""
+            preferred_call_date_str = ""
 
         record = {
             "timestamp_utc": now_utc.strftime("%Y/%m/%d %H:%M:%S"),
@@ -185,7 +205,7 @@ or by email at elamgmtllc@gmail.com.
             "general_liability_limit": gl_limit,
             "bonding_capacity": bonding_capacity,
             "workers_comp": workers_comp,
-            "preferred_call_date": preferred_date.strftime("%m/%d/%Y"),
+            "preferred_call_date": preferred_call_date_str,
             "preferred_call_time_central": preferred_call_time_central,
             "preferred_call_datetime_central": preferred_call_datetime_central,
             "notes": notes,
