@@ -36,6 +36,14 @@ def build_time_options_12h() -> list[str]:
 
 
 def show_public_form():
+    # Load existing bookings (if any) to block off taken slots
+    existing_df = None
+    if os.path.exists(CSV_PATH):
+        try:
+            existing_df = pd.read_csv(CSV_PATH)
+        except Exception:
+            existing_df = None
+
     if os.path.exists(LOGO_PATH):
         st.image(LOGO_PATH, width=200)
 
@@ -152,18 +160,46 @@ For questions, you can reach us at **832 273 0498** or **elamgmtllc@gmail.com**.
         col_date, col_time = st.columns(2)
         preferred_date = col_date.date_input("Preferred date for a conference call")
 
-        time_options = build_time_options_12h()
-        default_time_label = "09:00 AM"
-        default_index = (
-            time_options.index(default_time_label)
-            if default_time_label in time_options
-            else 0
-        )
-        preferred_time_label = col_time.selectbox(
-            "Preferred time (Central, 12-hour)",
-            time_options,
-            index=default_index,
-        )
+        # Build full list of time options
+        time_options_all = build_time_options_12h()
+
+        # Compute which times are already booked for the selected date
+        booked_times_for_date = set()
+        if (
+            existing_df is not None
+            and "preferred_call_date" in existing_df.columns
+            and "preferred_call_time_central" in existing_df.columns
+        ):
+            selected_date_str = preferred_date.strftime("%m/%d/%Y")
+            mask = existing_df["preferred_call_date"].astype(str) == selected_date_str
+            booked_times_for_date = set(
+                existing_df.loc[mask, "preferred_call_time_central"]
+                .dropna()
+                .astype(str)
+            )
+
+        available_time_options = [
+            t for t in time_options_all if t not in booked_times_for_date
+        ]
+
+        if not available_time_options:
+            preferred_time_label = col_time.selectbox(
+                "Preferred time (Central, 12-hour)",
+                ["No times available for this date. Please choose another date."],
+                index=0,
+            )
+        else:
+            default_time_label = "09:00 AM"
+            default_index = (
+                available_time_options.index(default_time_label)
+                if default_time_label in available_time_options
+                else 0
+            )
+            preferred_time_label = col_time.selectbox(
+                "Preferred time (Central, 12-hour)",
+                available_time_options,
+                index=default_index,
+            )
 
         notes = st.text_area("Notes or comments")
 
@@ -177,6 +213,14 @@ For questions, you can reach us at **832 273 0498** or **elamgmtllc@gmail.com**.
             required_missing.append("Phone")
         if not email:
             required_missing.append("Email")
+
+        # If no available times for that date, block submission
+        if "No times available for this date" in preferred_time_label:
+            st.error(
+                "All times are booked for the selected date. "
+                "Please choose a different date for your conference call."
+            )
+            return
 
         if required_missing:
             st.error(
