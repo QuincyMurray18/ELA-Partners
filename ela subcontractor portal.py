@@ -11,6 +11,7 @@ CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 
 def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
+    """Append one record to the CSV file, creating it if needed."""
     new_row = pd.DataFrame([record])
 
     if os.path.exists(path):
@@ -26,9 +27,9 @@ def append_to_csv(record: dict, path: str = CSV_PATH) -> None:
 
 
 def build_time_options_12h() -> list[str]:
+    """Return 12-hour time labels (every 30 minutes) from 7:00 AM to 7:30 PM."""
     labels: list[str] = []
-    # 7:00 AM to 7:30 PM in 30-minute increments
-    for hour in range(7, 20):
+    for hour in range(7, 20):  # 7 to 19
         for minute in (0, 30):
             dt = datetime(2000, 1, 1, hour, minute)
             labels.append(dt.strftime("%I:%M %p"))
@@ -36,6 +37,7 @@ def build_time_options_12h() -> list[str]:
 
 
 def show_public_form():
+    """Public-facing subcontractor sign-up form with booking-aware time slots."""
     # Load existing bookings (if any) to block off taken slots
     existing_df = None
     if os.path.exists(CSV_PATH):
@@ -86,18 +88,19 @@ For questions, you can reach us at **832 273 0498** or **elamgmtllc@gmail.com**.
     )
 
     st.markdown("---")
+    st.markdown("**Fields marked with * are required.**")
 
     with st.form("subcontractor_signup_form"):
         st.markdown("### Company information")
 
         col1, col2 = st.columns(2)
-        contact_name = col1.text_input("Primary contact name")
-        business_name = col2.text_input("Legal business name")
+        contact_name = col1.text_input("Primary contact name *")
+        business_name = col2.text_input("Legal business name *")
         dba = st.text_input("DBA (if applicable)")
         address = st.text_area("Business address")
         website = st.text_input("Website")
-        phone = st.text_input("Phone")
-        email = st.text_input("Email")
+        phone = st.text_input("Phone *")
+        email = st.text_input("Email *")
 
         st.markdown("### Business identifiers")
 
@@ -207,6 +210,8 @@ For questions, you can reach us at **832 273 0498** or **elamgmtllc@gmail.com**.
 
     if submitted:
         required_missing: list[str] = []
+        if not contact_name:
+            required_missing.append("Primary contact name")
         if not business_name:
             required_missing.append("Legal business name")
         if not phone:
@@ -295,6 +300,7 @@ For questions, you can reach us at **832 273 0498** or **elamgmtllc@gmail.com**.
 
 
 def show_admin_area():
+    """Hidden internal area for ELA to see, delete, and download signups."""
     st.markdown("### ELA internal view")
 
     if not os.path.exists(CSV_PATH):
@@ -353,6 +359,7 @@ def main():
 
     show_public_form()
 
+    # Admin view toggle via query parameter: add ?ela_admin=1 to URL
     params = st.experimental_get_query_params()
     is_admin = params.get("ela_admin", ["0"])[0] == "1"
 
